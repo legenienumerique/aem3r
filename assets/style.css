@@ -55,9 +55,9 @@ section{position:relative}
   .nav{position:fixed;inset:0;flex-direction:column;justify-content:center;align-items:center;gap:6px;border-radius:0;background:var(--bg);opacity:0;pointer-events:none;transition:opacity .4s;box-shadow:none}
   .nav a{font:400 2.6rem/1.2 var(--f-title);letter-spacing:0;text-transform:none;color:#fff;background:none!important}
   .nav a[aria-current]{color:var(--blue)}
-  body.open .nav{opacity:1;pointer-events:auto}
-  body.open .burger i:first-child{transform:translateY(5px) rotate(45deg)}
-  body.open .burger i:last-child{transform:translateY(-5px) rotate(-45deg)}
+  body.mopen .nav{opacity:1;pointer-events:auto}
+  body.mopen .burger i:first-child{transform:translateY(5px) rotate(45deg)}
+  body.mopen .burger i:last-child{transform:translateY(-5px) rotate(-45deg)}
 }
 
 /* ===== apparitions ===== */
@@ -396,3 +396,25 @@ html.vc input,html.vc textarea{cursor:text!important}
 .veh.hot svg{transform:scale(1.35)}
 .veh.boat svg{animation:rock 2.4s ease-in-out infinite}
 @keyframes rock{50%{translate:0 -1.5px;rotate:3deg}}
+
+/* ===== mobile : en-tête, menu plein écran, pas de défilement latéral ===== */
+html,body{overflow-x:hidden;overflow-x:clip;max-width:100%}
+@media(max-width:900px){
+  .top{grid-template-columns:auto 1fr auto;gap:10px;padding:10px 14px}
+  .top .logo img{height:48px}
+  .top .side{display:flex;justify-self:end;gap:6px}
+  .top .side img{height:34px}
+  .top .side .q{height:30px;padding:2px 4px;border-radius:8px}
+  .burger{width:44px;height:44px;background:rgba(5,13,23,.9);box-shadow:inset 0 0 0 1px rgba(255,255,255,.3)}
+  .nav{overflow-y:auto;padding:96px 24px 40px;gap:2px;justify-content:flex-start}
+  .nav a{font-size:clamp(1.9rem,8.4vw,2.5rem);line-height:1.25;padding:.15rem 0!important;text-align:center}
+  .nav a.hl{margin-top:1rem;padding:.7rem 1.6rem!important;border-radius:99px;background:var(--blue)!important;color:#fff!important;font-size:1.5rem}
+  body.mopen{overflow:hidden}
+  .hero .go{right:14px}
+  .wrap{width:calc(100% - 36px)}
+}
+@media(max-width:380px){.top .side img{height:30px}.top .side .q{height:26px}.top .logo img{height:42px}}
+@media(max-width:900px){
+  .nav .ddb{display:none}
+  .top .logo,.top .side{position:relative;z-index:96}
+}

@@ -7,8 +7,12 @@
 
   /* menu mobile */
   const burger = $('.burger');
-  burger?.addEventListener('click', () => burger.setAttribute('aria-expanded', document.body.classList.toggle('open')));
-  $$('.nav a').forEach(a => a.addEventListener('click', () => document.body.classList.remove('open')));
+  burger?.addEventListener('click', () => {
+    const o = document.body.classList.toggle('mopen');
+    burger.setAttribute('aria-expanded', o);
+    window.__lenis && (o ? window.__lenis.stop() : window.__lenis.start());
+  });
+  $$('.nav a').forEach(a => a.addEventListener('click', () => { document.body.classList.remove('mopen'); window.__lenis && window.__lenis.start(); }));
 
   /* découpe : mots (titres) et lettres (mot géant) */
   const splitWords = (el, cls) => {
@@ -66,6 +70,7 @@
     gsap.registerPlugin(ScrollTrigger);
     if (typeof Lenis !== 'undefined') {
       const lenis = new Lenis({ lerp: .09 });
+      window.__lenis = lenis;
       lenis.on('scroll', ScrollTrigger.update);
       gsap.ticker.add(t => lenis.raf(t * 1000));
       gsap.ticker.lagSmoothing(0);
@@ -79,7 +84,7 @@
     if (hero) {
       const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
       tl.from('.word .c', { yPercent: 115, duration: 1.5, stagger: .07 }, .1)
-        .from('.top > *', { y: -30, opacity: 0, duration: 1, stagger: .1 }, .2)
+        .from(innerWidth > 900 ? '.top > *' : '.top > *:not(.nav)', { y: -30, opacity: 0, duration: 1, stagger: .1, clearProps: 'all' }, .2)
         .from('.hero .cap,.hero .go,.hero .para,.hero .chips .tag', { y: 24, opacity: 0, duration: 1.1, stagger: .06 }, .7)
         .from('.hero .tile', { scale: 0, rotation: () => gsap.utils.random(-22, 22), opacity: 0, duration: 1.3, stagger: .1, ease: 'back.out(1.5)' }, .5);
       $$('.hero .tile').forEach((t, i) => {
