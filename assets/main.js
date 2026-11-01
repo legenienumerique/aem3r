@@ -226,6 +226,19 @@
     rg.addEventListener('input', upd); upd();
   }
 
+  /* paiement : montant libre (maquette, aucun paiement réel) */
+  const pay = $('#pay');
+  if (pay) {
+    const inp = $('#amt'), out = $('#payOut'), qs = $$('.quick button', pay);
+    const get = () => Math.max(0, parseFloat(String(inp.value).replace(',', '.')) || 0);
+    const upd = () => { out.textContent = get().toLocaleString('fr-FR', { maximumFractionDigits: 2 }) + ' €'; qs.forEach(b => b.classList.toggle('on', +b.dataset.v === get())); };
+    $$('.amt [data-s]', pay).forEach(b => b.addEventListener('click', () => { inp.value = Math.max(0, get() + +b.dataset.s); upd(); }));
+    qs.forEach(b => b.addEventListener('click', () => { inp.value = b.dataset.v; upd(); }));
+    inp.addEventListener('input', upd);
+    $('#payGo', pay).addEventListener('click', e => { e.preventDefault(); $('.ok', pay).style.display = 'block'; });
+    upd();
+  }
+
   /* formulaire (maquette : aucun envoi) */
   $$('form.f').forEach(f => f.addEventListener('submit', e => {
     e.preventDefault(); const ok = $('.ok', f); if (ok) ok.style.display = 'block'; f.reset();
