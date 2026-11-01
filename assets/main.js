@@ -257,7 +257,6 @@
 
 /* curseur : petit véhicule qui suit la souris (voiture, moto, remorque, bateau selon la page) */
 (() => {
-  if (!matchMedia('(hover:hover) and (pointer:fine)').matches) return;
   const v = document.body.dataset.v || 'voiture';
   const W = '#fff', B = '#008cf7', D = '#050d17';
   const wheel = (x, r = 2.7) => `<circle cx="${x}" cy="14.8" r="${r}" fill="${D}" stroke="${W}" stroke-width="1.5"/>`;
@@ -267,6 +266,7 @@
     remorque: `<rect x="7" y="3.6" width="22" height="8.6" rx="1.6" fill="${W}"/><rect x="7" y="8.6" width="22" height="2" fill="${B}"/><path d="M7 10.6H2.4" stroke="${W}" stroke-width="1.7" stroke-linecap="round"/><circle cx="2.2" cy="10.6" r="1.4" fill="${B}"/>${wheel(18, 2.8)}`,
     bateau: `<path d="M16 1.6v9.2" stroke="${W}" stroke-width="1.5" stroke-linecap="round"/><path d="M16.8 2.4l8 8h-8z" fill="${B}"/><path d="M15.2 4l-6 6.8h6z" fill="${W}"/><path d="M2.4 11.6h27.2l-3.6 4.6H6z" fill="${W}"/><path d="M1.5 18.6q2-1.6 4 0t4 0 4 0 4 0 4 0 4 0 4 0" fill="none" stroke="${B}" stroke-width="1.4" stroke-linecap="round"/>`
   };
+  const start = () => {
   const el = document.createElement('div');
   el.className = 'veh ' + v;
   el.setAttribute('aria-hidden', 'true');
@@ -280,7 +280,7 @@
     tilt = Math.max(-14, Math.min(14, (e.clientY - ty) * .6 * dir));
     tx = e.clientX; ty = e.clientY;
     if (!shown) { x = tx; y = ty; shown = true; el.classList.add('on'); }
-    el.classList.toggle('hot', !!e.target.closest('a,button,summary,input,select,textarea,label'));
+    el.classList.toggle('hot', !!(e.target.closest && e.target.closest('a,button,summary,input,select,textarea,label')));
   }, { passive: true });
   document.addEventListener('pointerleave', () => { el.classList.remove('on'); shown = false; });
   const loop = () => {
@@ -290,4 +290,11 @@
     requestAnimationFrame(loop);
   };
   loop();
+  };
+  addEventListener('pointermove', function f(e) {
+    if (e.pointerType !== 'mouse') return;
+    removeEventListener('pointermove', f);
+    start();
+    dispatchEvent(new PointerEvent('pointermove', { clientX: e.clientX, clientY: e.clientY, pointerType: 'mouse' }));
+  }, { passive: true });
 })();

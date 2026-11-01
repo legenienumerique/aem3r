@@ -388,10 +388,8 @@ footer:hover .fw{-webkit-text-stroke-color:var(--blue)}
 .rc .qm{font:400 4rem/.6 var(--f-title);color:var(--blue);height:1.6rem}
 
 /* ===== curseur véhicule (26 px max) ===== */
-@media (hover:hover) and (pointer:fine){
-  html.vc,html.vc *{cursor:none!important}
-  html.vc input,html.vc textarea{cursor:text!important}
-}
+html.vc,html.vc *{cursor:none!important}
+html.vc input,html.vc textarea{cursor:text!important}
 .veh{position:fixed;left:0;top:0;width:26px;height:16px;z-index:9999;pointer-events:none;opacity:0;transition:opacity .3s;will-change:transform}
 .veh.on{opacity:1}
 .veh svg{display:block;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 2px 3px rgba(0,0,0,.55));transition:transform .35s var(--ease)}
