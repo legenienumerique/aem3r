@@ -254,3 +254,40 @@
     e.preventDefault(); const ok = $('.ok', f); if (ok) ok.style.display = 'block'; f.reset();
   }));
 })();
+
+/* curseur : petit véhicule qui suit la souris (voiture, moto, remorque, bateau selon la page) */
+(() => {
+  if (!matchMedia('(hover:hover) and (pointer:fine)').matches) return;
+  const v = document.body.dataset.v || 'voiture';
+  const W = '#fff', B = '#008cf7', D = '#050d17';
+  const wheel = (x, r = 2.7) => `<circle cx="${x}" cy="14.8" r="${r}" fill="${D}" stroke="${W}" stroke-width="1.5"/>`;
+  const art = {
+    voiture: `<path d="M2.5 14.4v-3.3c0-1 .6-1.8 1.6-2.1l4.6-1.6 2.7-3.2C12 3.5 12.8 3 13.8 3h6.4c.9 0 1.7.4 2.3 1.1l2.6 3.4 3.2.8c1.1.3 1.9 1.3 1.9 2.4v3.7z" fill="${W}"/><path d="M12.4 5.4h3.5v2.4h-5.4zM17.3 5.4h3.2l1.8 2.4h-5z" fill="${B}"/>${wheel(8.8)}${wheel(23.2)}`,
+    moto: `<path d="M6 14.8l5-5.3h6.4l2.4-3.4h3.4M17.4 9.5l3.6 5.3M11 9.5L9.6 7H7.2" fill="none" stroke="${W}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.6 9.3l1.4-2.7h5l1 2.7z" fill="${B}"/>${wheel(5.8, 3)}${wheel(26.2, 3)}`,
+    remorque: `<rect x="7" y="3.6" width="22" height="8.6" rx="1.6" fill="${W}"/><rect x="7" y="8.6" width="22" height="2" fill="${B}"/><path d="M7 10.6H2.4" stroke="${W}" stroke-width="1.7" stroke-linecap="round"/><circle cx="2.2" cy="10.6" r="1.4" fill="${B}"/>${wheel(18, 2.8)}`,
+    bateau: `<path d="M16 1.6v9.2" stroke="${W}" stroke-width="1.5" stroke-linecap="round"/><path d="M16.8 2.4l8 8h-8z" fill="${B}"/><path d="M15.2 4l-6 6.8h6z" fill="${W}"/><path d="M2.4 11.6h27.2l-3.6 4.6H6z" fill="${W}"/><path d="M1.5 18.6q2-1.6 4 0t4 0 4 0 4 0 4 0 4 0 4 0" fill="none" stroke="${B}" stroke-width="1.4" stroke-linecap="round"/>`
+  };
+  const el = document.createElement('div');
+  el.className = 'veh ' + v;
+  el.setAttribute('aria-hidden', 'true');
+  el.innerHTML = `<svg viewBox="0 0 32 20">${art[v] || art.voiture}</svg>`;
+  document.body.append(el);
+  document.documentElement.classList.add('vc');
+  let tx = -99, ty = -99, x = tx, y = ty, dir = 1, tilt = 0, shown = false;
+  addEventListener('pointermove', e => {
+    const dx = e.clientX - tx;
+    if (Math.abs(dx) > 1.5) dir = dx > 0 ? 1 : -1;
+    tilt = Math.max(-14, Math.min(14, (e.clientY - ty) * .6 * dir));
+    tx = e.clientX; ty = e.clientY;
+    if (!shown) { x = tx; y = ty; shown = true; el.classList.add('on'); }
+    el.classList.toggle('hot', !!e.target.closest('a,button,summary,input,select,textarea,label'));
+  }, { passive: true });
+  document.addEventListener('pointerleave', () => { el.classList.remove('on'); shown = false; });
+  const loop = () => {
+    x += (tx - x) * .3; y += (ty - y) * .3;
+    tilt *= .92;
+    el.style.transform = `translate(${(x - 13).toFixed(1)}px,${(y - 8).toFixed(1)}px) scaleX(${dir}) rotate(${tilt.toFixed(1)}deg)`;
+    requestAnimationFrame(loop);
+  };
+  loop();
+})();
