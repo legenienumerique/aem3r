@@ -303,3 +303,19 @@
     dispatchEvent(new PointerEvent('pointermove', { clientX: e.clientX, clientY: e.clientY, pointerType: 'mouse' }));
   }, { passive: true });
 })();
+
+/* feu tricolore du bouton menu : vert → orange → rouge, durées aléatoires */
+(() => {
+  const tl = document.querySelector('.burger .tl');
+  if (!tl) return;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { tl.dataset.s = 'r'; return; }
+  const seq = ['g', 'o', 'r'], dur = { g: [1800, 4200], o: [800, 1300], r: [1800, 4200] };
+  let i = Math.floor(Math.random() * 3);
+  const step = () => {
+    const k = seq[i], [a, b] = dur[k];
+    tl.dataset.s = k;
+    setTimeout(() => { i = (i + 1) % 3; step(); }, a + Math.random() * (b - a));
+  };
+  step();
+  document.querySelector('.stop')?.addEventListener('click', () => document.querySelector('.burger').click());
+})();
