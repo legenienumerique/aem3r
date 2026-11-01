@@ -226,6 +226,16 @@
     rg.addEventListener('input', upd); upd();
   }
 
+  /* filtres (avis, actualités) */
+  $$('.flt').forEach(f => {
+    const items = $$(f.dataset.t);
+    $$('button', f).forEach(b => b.addEventListener('click', () => {
+      $$('button', f).forEach(x => x.classList.toggle('on', x === b));
+      items.forEach(i => i.classList.toggle('hide', b.dataset.f !== '*' && i.dataset.c !== b.dataset.f));
+      if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
+    }));
+  });
+
   /* paiement : montant libre (maquette, aucun paiement réel) */
   const pay = $('#pay');
   if (pay) {
