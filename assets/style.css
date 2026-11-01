@@ -268,7 +268,7 @@ footer{overflow:hidden;padding-top:clamp(70px,9vw,120px)}
 .fg a{transition:color .3s}.fg a:hover{color:var(--blue)}
 .fg p{max-width:34ch;color:var(--mute);font-size:.94rem}
 .fg img{height:70px;width:auto;margin-bottom:1.2rem}
-.fw{font:400 23vw/.78 var(--f-title);text-align:center;white-space:nowrap;color:transparent;-webkit-text-stroke:1.2px rgba(255,255,255,.22);margin-bottom:-4.4vw;user-select:none;transition:-webkit-text-stroke-color .6s}
+.fw{font:400 23vw/.78 var(--f-title);text-align:center;white-space:nowrap;color:transparent;-webkit-text-stroke:1.2px rgba(255,255,255,.22);margin-bottom:-2vw;user-select:none;transition:-webkit-text-stroke-color .6s}
 footer:hover .fw{-webkit-text-stroke-color:var(--blue)}
 .fb{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:1.4rem 0;border-top:1px solid var(--line);color:var(--mute);position:relative;z-index:2;background:var(--bg)}
 @media(max-width:800px){.fg{grid-template-columns:1fr 1fr}.fg>:first-child{grid-column:1/-1}}
