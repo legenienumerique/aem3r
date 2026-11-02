@@ -271,7 +271,145 @@
     remorque: `<rect x="7" y="3.6" width="22" height="8.6" rx="1.6" fill="${W}"/><rect x="7" y="8.6" width="22" height="2" fill="${B}"/><path d="M7 10.6H2.4" stroke="${W}" stroke-width="1.7" stroke-linecap="round"/><circle cx="2.2" cy="10.6" r="1.4" fill="${B}"/>${wheel(18, 2.8)}`,
     bateau: `<path d="M16 1.6v9.2" stroke="${W}" stroke-width="1.5" stroke-linecap="round"/><path d="M16.8 2.4l8 8h-8z" fill="${B}"/><path d="M15.2 4l-6 6.8h6z" fill="${W}"/><path d="M2.4 11.6h27.2l-3.6 4.6H6z" fill="${W}"/><path d="M1.5 18.6q2-1.6 4 0t4 0 4 0 4 0 4 0 4 0 4 0" fill="none" stroke="${B}" stroke-width="1.4" stroke-linecap="round"/>`
   };
+  /* traces derrière le véhicule : pneus et fumée de drift (voiture, moto, remorque) ou sillage (bateau).
+     Rien n'est créé quand la souris est immobile : tout s'efface doucement. */
+  const makeFx = kind => {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return { step() {}, draw() {} };
+    const cv = document.createElement('canvas');
+    cv.className = 'fx'; cv.setAttribute('aria-hidden', 'true');
+    document.body.insertBefore(cv, document.body.firstChild);
+    const ctx = cv.getContext('2d');
+    let W = 0, H = 0;
+    const size = () => {
+      const d = Math.min(devicePixelRatio || 1, 2);
+      W = innerWidth; H = innerHeight;
+      cv.width = W * d; cv.height = H * d;
+      ctx.setTransform(d, 0, 0, d, 0, 0);
+    };
+    size(); addEventListener('resize', size);
+    const water = kind === 'bateau';
+    const pts = [], puffs = [], rings = [], foam = [], waves = [];
+    let px = null, py = null, ang = 0, acc = 0, accW = 0, dirty = false;
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    const GY = 4; // les roues touchent le sol un peu sous le centre du véhicule
+    const step = (x, y, now) => {
+      if (px === null) { px = x; py = y; return; }
+      const dx = x - px, dy = y - py, sp = Math.hypot(dx, dy);
+      if (sp < 1.1) { px = x; py = y; return; }
+      let da = Math.atan2(dy, dx) - ang;
+      while (da > Math.PI) da -= 2 * Math.PI;
+      while (da < -Math.PI) da += 2 * Math.PI;
+      ang += da * .35;
+      const c = Math.cos(ang), s = Math.sin(ang);
+      const drift = !water && sp > 5 && Math.abs(da) > .16;
+      pts.push({ x, y: y + GY, a: ang, t: now, d: drift ? 1 : 0, ok: sp < 60 });
+      if (drift && puffs.length < 60) {
+        for (let i = 0; i < 2; i++) puffs.push({ x: x - c * 8 + rnd(-3, 3), y: y + GY - s * 8 + rnd(-2, 2), vx: -c * .18 + rnd(-.25, .25), vy: rnd(-.45, -.1), t: now, life: rnd(1000, 1500) });
+      }
+      if (water) {
+        acc += sp; accW += sp;
+        if (acc > 15) {
+          acc = 0;
+          rings.push({ x: x - c * 9, y: y + 5 - s * 9, t: now });
+          if (Math.random() < .55) foam.push({ x: x - c * 7 + rnd(-4, 4), y: y + 5 - s * 7 + rnd(-3, 3), vx: rnd(-.3, .3), vy: rnd(-.25, .1), r: rnd(.8, 1.7), t: now });
+        }
+        if (accW > 70) { accW = 0; waves.push({ x: x - c * 14 + rnd(-8, 8), y: y + 8 + rnd(-2, 6), t: now, ph: rnd(0, 6) }); }
+      }
+      px = x; py = y;
+      if (pts.length > 240) pts.shift();
+      if (rings.length > 40) rings.shift();
+      if (foam.length > 50) foam.shift();
+      if (waves.length > 10) waves.shift();
+    };
+    const fade = (age, life) => { const k = 1 - age / life; return k <= 0 ? 0 : k * k; };
+    const draw = now => {
+      while (pts.length && now - pts[0].t > 1800) pts.shift();
+      while (puffs.length && now - puffs[0].t > puffs[0].life) puffs.shift();
+      while (rings.length && now - rings[0].t > 1400) rings.shift();
+      while (foam.length && now - foam[0].t > 1000) foam.shift();
+      while (waves.length && now - waves[0].t > 1500) waves.shift();
+      const any = pts.length || puffs.length || rings.length || foam.length || waves.length;
+      if (!any) { if (dirty) { ctx.clearRect(0, 0, W, H); dirty = false; } return; }
+      dirty = true;
+      ctx.clearRect(0, 0, W, H);
+      ctx.lineCap = 'round';
+      if (!water) {
+        // traces de pneus : deux lignes fines (une seule pour la moto), plus marquées en drift
+        const off = kind === 'moto' ? 0 : kind === 'remorque' ? 3.6 : 3.1;
+        for (let i = 1; i < pts.length; i++) {
+          const p0 = pts[i - 1], p1 = pts[i];
+          if (!p1.ok) continue;
+          const life = p1.d ? 1700 : 1100, al = fade(now - p1.t, life);
+          if (al <= 0) continue;
+          const o = p1.d ? off + 1.2 : off, nx = -Math.sin(p1.a), ny = Math.cos(p1.a);
+          ctx.lineWidth = p1.d ? 2.1 : 1.3;
+          ctx.strokeStyle = `rgba(255,255,255,${(al * (p1.d ? .3 : .13)).toFixed(3)})`;
+          for (const sg of off ? [-1, 1] : [0]) {
+            ctx.beginPath();
+            ctx.moveTo(p0.x + nx * o * sg, p0.y + ny * o * sg);
+            ctx.lineTo(p1.x + nx * o * sg, p1.y + ny * o * sg);
+            ctx.stroke();
+          }
+        }
+        // fumée : petits nuages doux qui grossissent et s'effacent
+        for (const f of puffs) {
+          const k = (now - f.t) / f.life; if (k >= 1) continue;
+          f.x += f.vx; f.y += f.vy;
+          const r = 3 + k * 15, a = .17 * (1 - k) * (1 - k);
+          const g = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, r);
+          g.addColorStop(0, `rgba(225,232,240,${a.toFixed(3)})`); g.addColorStop(1, 'rgba(225,232,240,0)');
+          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(f.x, f.y, r, 0, 6.2832); ctx.fill();
+        }
+      } else {
+        // sillage en V : deux traits qui s'écartent en vieillissant
+        ctx.lineWidth = 1;
+        for (let i = 1; i < pts.length; i++) {
+          const p0 = pts[i - 1], p1 = pts[i];
+          if (!p1.ok) continue;
+          const age = now - p1.t, al = fade(age, 1300);
+          if (al <= 0) continue;
+          const sp = 2 + age * .012, nx = -Math.sin(p1.a), ny = Math.cos(p1.a), wy = 5;
+          ctx.strokeStyle = `rgba(185,230,255,${(al * .3).toFixed(3)})`;
+          for (const sg of [-1, 1]) {
+            ctx.beginPath();
+            ctx.moveTo(p0.x + nx * sp * sg, p0.y - GY + wy + ny * sp * sg);
+            ctx.lineTo(p1.x + nx * sp * sg, p1.y - GY + wy + ny * sp * sg);
+            ctx.stroke();
+          }
+        }
+        // ronds dans l'eau
+        for (const r of rings) {
+          const k = (now - r.t) / 1400; if (k >= 1) continue;
+          const rx = 2 + k * 20;
+          ctx.strokeStyle = `rgba(150,215,255,${(.34 * (1 - k) * (1 - k)).toFixed(3)})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.ellipse(r.x, r.y, rx, rx * .4, 0, 0, 6.2832); ctx.stroke();
+        }
+        // petites vagues qui ondulent
+        for (const w of waves) {
+          const k = (now - w.t) / 1500; if (k >= 1) continue;
+          ctx.strokeStyle = `rgba(160,220,255,${(.32 * (1 - k) * (1 - k)).toFixed(3)})`;
+          ctx.lineWidth = 1.1;
+          ctx.beginPath();
+          for (let u = -8; u <= 8; u += 1) {
+            const yy = w.y - k * 3 + Math.sin(u * .55 + w.ph + k * 6) * 1.7;
+            u === -8 ? ctx.moveTo(w.x + u, yy) : ctx.lineTo(w.x + u, yy);
+          }
+          ctx.stroke();
+        }
+        // écume : minuscules bulles
+        for (const f of foam) {
+          const k = (now - f.t) / 1000; if (k >= 1) continue;
+          f.x += f.vx; f.y += f.vy;
+          ctx.fillStyle = `rgba(235,248,255,${(.5 * (1 - k) * (1 - k)).toFixed(3)})`;
+          ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 6.2832); ctx.fill();
+        }
+      }
+    };
+    return { step, draw };
+  };
   const start = () => {
+  const fx = makeFx(v);
   const el = document.createElement('div');
   el.className = 'veh ' + v;
   el.setAttribute('aria-hidden', 'true');
@@ -292,6 +430,9 @@
     x += (tx - x) * .3; y += (ty - y) * .3;
     tilt *= .92;
     el.style.transform = `translate(${(x - 13).toFixed(1)}px,${(y - 8).toFixed(1)}px) scaleX(${dir}) rotate(${tilt.toFixed(1)}deg)`;
+    const now = performance.now();
+    if (shown) fx.step(x, y, now);
+    fx.draw(now);
     requestAnimationFrame(loop);
   };
   loop();
