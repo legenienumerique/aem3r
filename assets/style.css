@@ -438,8 +438,12 @@ html,body{overflow-x:hidden;overflow-x:clip;max-width:100%}
 @keyframes signin{0%{transform:scale(.2) rotate(-40deg);opacity:0}60%{transform:scale(1.1) rotate(6deg);opacity:1}100%{transform:none;opacity:1}}
 @keyframes sway{50%{transform:rotate(-3deg)}}
 @media(max-width:900px){
-  .ddm{pointer-events:auto!important;opacity:1!important;transform:none!important;translate:none!important}
-  .nav a,.nav button.stop{pointer-events:auto}
+  .ddm{pointer-events:inherit!important;opacity:1!important;transform:none!important;translate:none!important}
+  body.mopen .nav a,body.mopen .nav button.stop{pointer-events:auto}
   .nav{-webkit-tap-highlight-color:transparent}
   .nav a{position:relative;z-index:1;touch-action:manipulation}
 }
+
+/* pied de page : le mot géant ne doit jamais bloquer les liens */
+.fw{pointer-events:none}
+footer .fg{position:relative;z-index:3}
